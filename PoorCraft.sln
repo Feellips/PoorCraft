@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.32014.148
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoorCraft", "PoorCraft\PoorCraft.csproj", "{C80C8897-61CF-4113-A3FF-1B9F542BD600}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C80C8897-61CF-4113-A3FF-1B9F542BD600}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C80C8897-61CF-4113-A3FF-1B9F542BD600}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C80C8897-61CF-4113-A3FF-1B9F542BD600}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C80C8897-61CF-4113-A3FF-1B9F542BD600}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {98D02D89-392F-44A5-AD04-242AB41E395B}
+	EndGlobalSection
+EndGlobal
