@@ -4,6 +4,8 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using PoorCraft.Blocks;
+using PoorCraft.Math;
+using System;
 
 namespace PoorCraft
 {
@@ -16,54 +18,19 @@ namespace PoorCraft
 
         private Block _block = new Grass();
 
-        private readonly Vector3[] _cubePositions =
-   {
-            new Vector3(0.0f, 0.0f, 0.0f),
-            new Vector3(1.0f, 0.0f, 0.0f),
-            new Vector3(2.0f, 0.0f, 0.0f),
-            new Vector3(3.0f, 0.0f, 0.0f),
-            new Vector3(4.0f, 0.0f, 0.0f),
-            new Vector3(5.0f, 0.0f, 0.0f),
-
-            new Vector3(0.0f, 0.0f, 1.0f),
-            new Vector3(1.0f, 0.0f, 1.0f),
-            new Vector3(2.0f, 0.0f, 1.0f),
-            new Vector3(3.0f, 0.0f, 1.0f),
-            new Vector3(4.0f, 0.0f, 1.0f),
-            new Vector3(5.0f, 0.0f, 1.0f),
-
-            new Vector3(0.0f, 0.0f, 2.0f),
-            new Vector3(1.0f, 0.0f, 2.0f),
-            new Vector3(2.0f, 0.0f, 2.0f),
-            new Vector3(3.0f, 0.0f, 2.0f),
-            new Vector3(4.0f, 0.0f, 2.0f),
-            new Vector3(5.0f, 0.0f, 2.0f),
-
-            new Vector3(0.0f, 0.0f, 3.0f),
-            new Vector3(1.0f, 0.0f, 3.0f),
-            new Vector3(2.0f, 0.0f, 3.0f),
-            new Vector3(3.0f, 0.0f, 3.0f),
-            new Vector3(4.0f, 0.0f, 3.0f),
-            new Vector3(5.0f, 0.0f, 3.0f),
-        };
-
         private readonly Vector3 _lightPos = new Vector3(1.2f, 1.0f, 2.0f);
 
         private int _vertexBufferObject;
-
         private int _vaoModel;
-
         private int _vaoLamp;
 
         private Shader _lampShader;
-
         private Shader _lightingShader;
 
-        // The texture containing information for the diffuse map, this would more commonly
-        // just be called the color/texture of the object.
         private Texture _diffuseMap;
 
         private Camera _camera;
+        private NoiseGenerator _noiseGenerator;
 
         private bool _firstMove = true;
 
@@ -79,6 +46,8 @@ namespace PoorCraft
             base.OnLoad();
 
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+
+            _noiseGenerator = new NoiseGenerator(new Random().Next());
 
             GL.Enable(EnableCap.DepthTest);
 
@@ -152,14 +121,19 @@ namespace PoorCraft
             _lightingShader.SetVector3("light.ambient", new Vector3(0.2f));
             _lightingShader.SetVector3("light.diffuse", new Vector3(0.5f));
 
-            for (int i = 0; i < _cubePositions.Length; i++)
-            {
-                Matrix4 model = Matrix4.CreateTranslation(_cubePositions[i]);
-                model *= Matrix4.CreateScale(0.2f);
-                _lightingShader.SetMatrix4("model", model);
+            var cubeSize = 500;
 
-                GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
-            }
+            for (int i = 0; i < cubeSize; i++)
+                for (int j = 0; j < cubeSize; j++)
+                {
+                    var z = (float)System.Math.Ceiling(_noiseGenerator.Noise((float)i * 0.1f, (float)j * 0.1f));
+
+                    Matrix4 model = Matrix4.CreateTranslation(new Vector3(j, z, i));
+                    model *= Matrix4.CreateScale(0.2f);
+                    _lightingShader.SetMatrix4("model", model);
+
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+                }
 
             GL.BindVertexArray(_vaoModel);
 
@@ -244,7 +218,7 @@ namespace PoorCraft
         {
             base.OnMouseWheel(e);
 
-            _camera.Fov -= e.OffsetY;
+            //_camera.Fov -= e.OffsetY;
         }
 
         protected override void OnResize(ResizeEventArgs e)
