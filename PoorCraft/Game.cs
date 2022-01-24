@@ -3,6 +3,7 @@ using OpenTK.Mathematics;
 using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
+using PoorCraft.Blocks;
 
 namespace PoorCraft
 {
@@ -12,50 +13,38 @@ namespace PoorCraft
     public class Game : GameWindow
     {
         // Since we are going to use textures we of course have to include two new floats per vertex, the texture coords.
-        private readonly float[] _vertices =
-        {
-            // Positions          Normals              Texture coords
-            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0625f, 0.0f,
-             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.125f, 0.0f,
-             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.125f, 0.0625f,
-             0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.125f, 0.0625f,
-            -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0625f, 0.0625f,
-            -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0625f, 0.0f,
 
-            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0625f, 0.0625f,
-             0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.125f, 0.0625f,
-             0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.125f, 0.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.125f, 0.0f,
-            -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0625f, 0.0f,
-            -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.0625f, 0.0625f,
+        private Block _block = new Grass();
 
-            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0625f, 0.0f,
-            -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.125f, 0.0f,
-            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.125f, 0.0625f,
-            -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,  0.125f, 0.0625f,
-            -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0625f, 0.0625f,
-            -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,  0.0625f, 0.0f,
+        private readonly Vector3[] _cubePositions =
+   {
+            new Vector3(0.0f, 0.0f, 0.0f),
+            new Vector3(1.0f, 0.0f, 0.0f),
+            new Vector3(2.0f, 0.0f, 0.0f),
+            new Vector3(3.0f, 0.0f, 0.0f),
+            new Vector3(4.0f, 0.0f, 0.0f),
+            new Vector3(5.0f, 0.0f, 0.0f),
 
-             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0625f, 0.0f,
-             0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.125f, 0.0f,
-             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.125f, 0.0625f,
-             0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,  0.125f, 0.0625f,
-             0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0625f, 0.0625f,
-             0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.0625f, 0.0f,
+            new Vector3(0.0f, 0.0f, 1.0f),
+            new Vector3(1.0f, 0.0f, 1.0f),
+            new Vector3(2.0f, 0.0f, 1.0f),
+            new Vector3(3.0f, 0.0f, 1.0f),
+            new Vector3(4.0f, 0.0f, 1.0f),
+            new Vector3(5.0f, 0.0f, 1.0f),
 
-            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.125f, 0.0f,
-             0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.1875f, 0.0f,
-             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.1875f, 0.0625f,
-             0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.1875f, 0.0625f,
-            -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,  0.125f, 0.0625f,
-            -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,  0.125f, 0.0f,
+            new Vector3(0.0f, 0.0f, 2.0f),
+            new Vector3(1.0f, 0.0f, 2.0f),
+            new Vector3(2.0f, 0.0f, 2.0f),
+            new Vector3(3.0f, 0.0f, 2.0f),
+            new Vector3(4.0f, 0.0f, 2.0f),
+            new Vector3(5.0f, 0.0f, 2.0f),
 
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-             0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0625f, 0.0f,
-             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0625f, 0.0625f,
-             0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0625f, 0.0625f,
-            -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0625f,
-            -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+            new Vector3(0.0f, 0.0f, 3.0f),
+            new Vector3(1.0f, 0.0f, 3.0f),
+            new Vector3(2.0f, 0.0f, 3.0f),
+            new Vector3(3.0f, 0.0f, 3.0f),
+            new Vector3(4.0f, 0.0f, 3.0f),
+            new Vector3(5.0f, 0.0f, 3.0f),
         };
 
         private readonly Vector3 _lightPos = new Vector3(1.2f, 1.0f, 2.0f);
@@ -95,7 +84,7 @@ namespace PoorCraft
 
             _vertexBufferObject = GL.GenBuffer();
             GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObject);
-            GL.BufferData(BufferTarget.ArrayBuffer, _vertices.Length * sizeof(float), _vertices, BufferUsageHint.StaticDraw);
+            GL.BufferData(BufferTarget.ArrayBuffer, _block.Length * sizeof(float), _block.Data, BufferUsageHint.StaticDraw);
 
             _lightingShader = new Shader("Shaders/shader.vert", "Shaders/lighting.frag");
             _lampShader = new Shader("Shaders/shader.vert", "Shaders/shader.frag");
@@ -113,8 +102,6 @@ namespace PoorCraft
                 GL.EnableVertexAttribArray(normalLocation);
                 GL.VertexAttribPointer(normalLocation, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 3 * sizeof(float));
 
-                // The texture coords have now been added too, remember we only have 2 coordinates as the texture is 2d,
-                // so the size parameter should only be 2 for the texture coordinates.
                 var texCoordLocation = _lightingShader.GetAttribLocation("aTexCoords");
                 GL.EnableVertexAttribArray(texCoordLocation);
                 GL.VertexAttribPointer(texCoordLocation, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), 6 * sizeof(float));
@@ -131,8 +118,6 @@ namespace PoorCraft
                 GL.VertexAttribPointer(positionLocation, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
             }
 
-            // Our two textures are loaded in from memory, you should head over and
-            // check them out and compare them to the results.
             _diffuseMap = Texture.LoadSpriteSheetFromFile("DefaultPack.png");
 
             _camera = new Camera(Vector3.UnitZ * 3, Size.X / (float)Size.Y);
@@ -148,18 +133,18 @@ namespace PoorCraft
 
             GL.BindVertexArray(_vaoModel);
 
-            // The two textures need to be used, in this case we use the diffuse map as our 0th texture
-            // and the specular map as our 1st texture.
             _diffuseMap.Use(TextureUnit.Texture0);
             _lightingShader.Use();
 
-            _lightingShader.SetMatrix4("model", Matrix4.Identity);
+            var grass = Matrix4.Identity;
+            grass *= Matrix4.CreateScale(0.2f);
+
+            _lightingShader.SetMatrix4("model", grass);
             _lightingShader.SetMatrix4("view", _camera.GetViewMatrix());
             _lightingShader.SetMatrix4("projection", _camera.GetProjectionMatrix());
 
             _lightingShader.SetVector3("viewPos", _camera.Position);
 
-            // Here we specify to the shaders what textures they should refer to when we want to get the positions.
             _lightingShader.SetInt("material.diffuse", 0);
             _lightingShader.SetFloat("material.shininess", 32.0f);
 
@@ -167,7 +152,14 @@ namespace PoorCraft
             _lightingShader.SetVector3("light.ambient", new Vector3(0.2f));
             _lightingShader.SetVector3("light.diffuse", new Vector3(0.5f));
 
-            GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+            for (int i = 0; i < _cubePositions.Length; i++)
+            {
+                Matrix4 model = Matrix4.CreateTranslation(_cubePositions[i]);
+                model *= Matrix4.CreateScale(0.2f);
+                _lightingShader.SetMatrix4("model", model);
+
+                GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+            }
 
             GL.BindVertexArray(_vaoModel);
 

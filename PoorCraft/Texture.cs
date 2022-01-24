@@ -14,7 +14,7 @@ namespace PoorCraft
 
         public static Texture LoadSpriteSheetFromFile(string path)
         {
-            using var image = Image.Load<Rgba32>("Textures/" +path);
+            using var image = Image.Load<Rgba32>("Textures/" + path);
 
             byte[] data = new byte[image.Width * image.Height * 4];
             var i = 0;
