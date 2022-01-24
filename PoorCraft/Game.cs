@@ -121,12 +121,12 @@ namespace PoorCraft
             _lightingShader.SetVector3("light.ambient", new Vector3(0.2f));
             _lightingShader.SetVector3("light.diffuse", new Vector3(0.5f));
 
-            var cubeSize = 500;
+            var cubeSize = 250;
 
             for (int i = 0; i < cubeSize; i++)
                 for (int j = 0; j < cubeSize; j++)
                 {
-                    var z = (float)System.Math.Ceiling(_noiseGenerator.Noise((float)i * 0.1f, (float)j * 0.1f));
+                    var z = (float)System.Math.Ceiling(_noiseGenerator.Noise(i * 0.1f, j * 0.1f) * 10);
 
                     Matrix4 model = Matrix4.CreateTranslation(new Vector3(j, z, i));
                     model *= Matrix4.CreateScale(0.2f);
