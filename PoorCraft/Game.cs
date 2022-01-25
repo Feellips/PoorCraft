@@ -16,8 +16,9 @@ namespace PoorCraft
     {
         // Since we are going to use textures we of course have to include two new floats per vertex, the texture coords.
 
-        private Block _block = new Grass();
-        private Block _block2 = new Dirt();
+        private Block _block = new Grass(new Vector3());
+        private Block _block2 = new Dirt(new Vector3());
+        private Block[] _blocks;
 
         private readonly Vector3 _lightPos = new Vector3(1.2f, 1.0f, 2.0f);
 
@@ -112,6 +113,22 @@ namespace PoorCraft
                 GL.VertexAttribPointer(positionLocation, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
             }
 
+            var cubeSize = 50;
+
+            _blocks = new Grass[cubeSize * cubeSize];
+
+            for (int i = 0; i < cubeSize; i++)
+                for (int j = 0; j < cubeSize ; j++)
+                {
+                    var z = (float)System.Math.Ceiling(_noiseGenerator.Noise(i * 0.1f, j * 0.1f) * 10);
+                    _blocks[i * cubeSize + j] = new Grass(new Vector3(j, z, i));
+
+                    //for (int k = (int)z; -10 < k; k--)
+                    //{
+                    //    _blocks[i * j + j] = new Dirt(new Vector3(j, k, i));
+                    //}
+                }
+
             _diffuseMap = Texture.LoadSpriteSheetFromFile("DefaultPack.png");
 
             _camera = new Camera(Vector3.UnitZ * 3, Size.X / (float)Size.Y);
@@ -146,32 +163,16 @@ namespace PoorCraft
             _lightingShader.SetVector3("light.ambient", new Vector3(0.2f));
             _lightingShader.SetVector3("light.diffuse", new Vector3(0.5f));
 
-            var cubeSize = 50;
+            for (int i = 0; i < _blocks.Length; i++)
+            {
+                GL.BindVertexArray(_vaoGrass);
 
-            for (int i = 0; i < cubeSize; i++)
-                for (int j = 0; j < cubeSize; j++)
-                {
-                    GL.BindVertexArray(_vaoGrass);
+                Matrix4 model = Matrix4.CreateTranslation(_blocks[i].Position);
+                model *= Matrix4.CreateScale(0.2f);
+                _lightingShader.SetMatrix4("model", model);
 
-                    var z = (float)System.Math.Ceiling(_noiseGenerator.Noise(i * 0.1f, j * 0.1f) * 10);
-
-                    Matrix4 model = Matrix4.CreateTranslation(new Vector3(j, z, i));
-                    model *= Matrix4.CreateScale(0.2f);
-                    _lightingShader.SetMatrix4("model", model);
-
-                    GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
-
-                    for (int k = (int)z; -10 < k; k--)
-                    {
-                        GL.BindVertexArray(_vaoDirt);
-
-                        model = Matrix4.CreateTranslation(new Vector3(j, k, i));
-                        model *= Matrix4.CreateScale(0.2f);
-                        _lightingShader.SetMatrix4("model", model);
-
-                        GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
-                    }
-                }
+                GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+            }
 
 
             GL.BindVertexArray(_vaoGrass);
@@ -250,6 +251,11 @@ namespace PoorCraft
 
                 _camera.Yaw += deltaX * sensitivity;
                 _camera.Pitch -= deltaY * sensitivity;
+            }
+
+            if (mouse.IsButtonDown(MouseButton.Button1))
+            {
+
             }
         }
 

@@ -1,7 +1,14 @@
-﻿namespace PoorCraft.Blocks
+﻿using OpenTK.Mathematics;
+
+namespace PoorCraft.Blocks
 {
     public class Dirt : Block
     {
+        public Dirt(Vector3 pos)
+        {
+            _pos = pos;
+        }
+
         private readonly float[] _vertices =
        {
             // Positions          Normals              Texture coords
@@ -47,8 +54,10 @@
             -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.125f, 0.0625f,
             -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,  0.125f, 0.0f,
         };
+        private Vector3 _pos;
 
         public override int Length => _vertices.Length;
         public override float[] Data => _vertices;
+        public override Vector3 Position => _pos;
     }
 }
