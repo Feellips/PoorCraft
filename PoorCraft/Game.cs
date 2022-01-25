@@ -17,11 +17,13 @@ namespace PoorCraft
         // Since we are going to use textures we of course have to include two new floats per vertex, the texture coords.
 
         private Block _block = new Grass();
+        private Block _block2 = new Dirt();
 
         private readonly Vector3 _lightPos = new Vector3(1.2f, 1.0f, 2.0f);
 
         private int _vertexBufferObject;
-        private int _vaoModel;
+        private int _vaoGrass;
+        private int _vaoDirt;
         private int _vaoLamp;
 
         private Shader _lampShader;
@@ -35,6 +37,7 @@ namespace PoorCraft
         private bool _firstMove = true;
 
         private Vector2 _lastPos;
+        private int _vertexBufferObject2;
 
         public Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
@@ -59,8 +62,30 @@ namespace PoorCraft
             _lampShader = new Shader("Shaders/shader.vert", "Shaders/shader.frag");
 
             {
-                _vaoModel = GL.GenVertexArray();
-                GL.BindVertexArray(_vaoModel);
+                _vaoGrass = GL.GenVertexArray();
+                GL.BindVertexArray(_vaoGrass);
+
+                // All of the vertex attributes have been updated to now have a stride of 8 float sizes.
+                var positionLocation = _lightingShader.GetAttribLocation("aPos");
+                GL.EnableVertexAttribArray(positionLocation);
+                GL.VertexAttribPointer(positionLocation, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
+
+                var normalLocation = _lightingShader.GetAttribLocation("aNormal");
+                GL.EnableVertexAttribArray(normalLocation);
+                GL.VertexAttribPointer(normalLocation, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 3 * sizeof(float));
+
+                var texCoordLocation = _lightingShader.GetAttribLocation("aTexCoords");
+                GL.EnableVertexAttribArray(texCoordLocation);
+                GL.VertexAttribPointer(texCoordLocation, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), 6 * sizeof(float));
+            }
+
+            {
+                _vertexBufferObject2 = GL.GenBuffer();
+                GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObject2);
+                GL.BufferData(BufferTarget.ArrayBuffer, _block2.Length * sizeof(float), _block2.Data, BufferUsageHint.StaticDraw);
+
+                _vaoDirt = GL.GenVertexArray();
+                GL.BindVertexArray(_vaoDirt);
 
                 // All of the vertex attributes have been updated to now have a stride of 8 float sizes.
                 var positionLocation = _lightingShader.GetAttribLocation("aPos");
@@ -100,7 +125,7 @@ namespace PoorCraft
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            GL.BindVertexArray(_vaoModel);
+            GL.BindVertexArray(_vaoGrass);
 
             _diffuseMap.Use(TextureUnit.Texture0);
             _lightingShader.Use();
@@ -121,11 +146,13 @@ namespace PoorCraft
             _lightingShader.SetVector3("light.ambient", new Vector3(0.2f));
             _lightingShader.SetVector3("light.diffuse", new Vector3(0.5f));
 
-            var cubeSize = 250;
+            var cubeSize = 50;
 
             for (int i = 0; i < cubeSize; i++)
                 for (int j = 0; j < cubeSize; j++)
                 {
+                    GL.BindVertexArray(_vaoGrass);
+
                     var z = (float)System.Math.Ceiling(_noiseGenerator.Noise(i * 0.1f, j * 0.1f) * 10);
 
                     Matrix4 model = Matrix4.CreateTranslation(new Vector3(j, z, i));
@@ -133,9 +160,21 @@ namespace PoorCraft
                     _lightingShader.SetMatrix4("model", model);
 
                     GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+
+                    for (int k = (int)z; -10 < k; k--)
+                    {
+                        GL.BindVertexArray(_vaoDirt);
+
+                        model = Matrix4.CreateTranslation(new Vector3(j, k, i));
+                        model *= Matrix4.CreateScale(0.2f);
+                        _lightingShader.SetMatrix4("model", model);
+
+                        GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+                    }
                 }
 
-            GL.BindVertexArray(_vaoModel);
+
+            GL.BindVertexArray(_vaoGrass);
 
             _lampShader.Use();
 
