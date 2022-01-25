@@ -6,6 +6,7 @@ using OpenTK.Windowing.GraphicsLibraryFramework;
 using PoorCraft.Blocks;
 using PoorCraft.Math;
 using System;
+using System.Collections.Generic;
 
 namespace PoorCraft
 {
@@ -18,7 +19,8 @@ namespace PoorCraft
 
         private Block _block = new Grass(new Vector3());
         private Block _block2 = new Dirt(new Vector3());
-        private Block[] _blocks;
+
+        private List<Block> _blocks;
 
         private readonly Vector3 _lightPos = new Vector3(1.2f, 1.0f, 2.0f);
 
@@ -115,18 +117,18 @@ namespace PoorCraft
 
             var cubeSize = 50;
 
-            _blocks = new Grass[cubeSize * cubeSize];
+            _blocks = new List<Block>(cubeSize * cubeSize);
 
             for (int i = 0; i < cubeSize; i++)
-                for (int j = 0; j < cubeSize ; j++)
+                for (int j = 0; j < cubeSize; j++)
                 {
                     var z = (float)System.Math.Ceiling(_noiseGenerator.Noise(i * 0.1f, j * 0.1f) * 10);
-                    _blocks[i * cubeSize + j] = new Grass(new Vector3(j, z, i));
+                    _blocks.Add(new Grass(new Vector3(j, z, i)));
 
-                    //for (int k = (int)z; -10 < k; k--)
-                    //{
-                    //    _blocks[i * j + j] = new Dirt(new Vector3(j, k, i));
-                    //}
+                    for (int k = (int)z; -10 < k; k--)
+                    {
+                        _blocks.Add(new Dirt(new Vector3(j, k, i)));
+                    }
                 }
 
             _diffuseMap = Texture.LoadSpriteSheetFromFile("DefaultPack.png");
@@ -163,9 +165,16 @@ namespace PoorCraft
             _lightingShader.SetVector3("light.ambient", new Vector3(0.2f));
             _lightingShader.SetVector3("light.diffuse", new Vector3(0.5f));
 
-            for (int i = 0; i < _blocks.Length; i++)
+            for (int i = 0; i < _blocks.Count; i++)
             {
-                GL.BindVertexArray(_vaoGrass);
+                if (_blocks[i] is Dirt)
+                {
+                    GL.BindVertexArray(_vaoDirt);
+                }
+                else
+                {
+                    GL.BindVertexArray(_vaoGrass);
+                }
 
                 Matrix4 model = Matrix4.CreateTranslation(_blocks[i].Position);
                 model *= Matrix4.CreateScale(0.2f);
@@ -255,8 +264,51 @@ namespace PoorCraft
 
             if (mouse.IsButtonDown(MouseButton.Button1))
             {
-
+                if (Cast(_camera) is Block block)
+                    _blocks.Remove(block);
             }
+        }
+
+        private Block Cast(Camera player)
+        {
+            throw new NotImplementedException();
+
+            for (int i = 0; i < 20; i++)
+                for (int j = 0; j < _blocks.Count; j++)
+                {
+                    var x1 = _blocks[i].Position.X;
+                    var y1 = _blocks[i].Position.Y;
+                    var x2 = _blocks[i].Position.X;
+                    var y2 = _blocks[i].Position.Y;
+
+                    var x3 = player.Position.X;
+                    var y3 = player.Position.Y;
+                    var x4 = player.Position.X + player.Front.X;
+                    var y4 = player.Position.Y + player.Front.Y;
+
+                    float den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+
+                    if (den == 0)
+                    {
+                        return null;
+                    }
+
+                    float t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den;
+                    float u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / den;
+                    if (t > 0 && t < 1 && u > 0)
+                    {
+                        Vector3 pt = new Vector3();
+                        pt.X = x1 + t * (x2 - x1);
+                        pt.Y = y1 + t * (y2 - y1);
+                        return pt;
+                    }
+                    else
+                    {
+                        return null;
+                    }
+                }
+
+            return null;
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
