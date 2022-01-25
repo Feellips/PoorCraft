@@ -4,6 +4,8 @@ using OpenTK.Windowing.Common;
 using OpenTK.Windowing.Desktop;
 using OpenTK.Windowing.GraphicsLibraryFramework;
 using PoorCraft.Blocks;
+using PoorCraft.Math;
+using System;
 
 namespace PoorCraft
 {
@@ -15,59 +17,27 @@ namespace PoorCraft
         // Since we are going to use textures we of course have to include two new floats per vertex, the texture coords.
 
         private Block _block = new Grass();
-
-        private readonly Vector3[] _cubePositions =
-   {
-            new Vector3(0.0f, 0.0f, 0.0f),
-            new Vector3(1.0f, 0.0f, 0.0f),
-            new Vector3(2.0f, 0.0f, 0.0f),
-            new Vector3(3.0f, 0.0f, 0.0f),
-            new Vector3(4.0f, 0.0f, 0.0f),
-            new Vector3(5.0f, 0.0f, 0.0f),
-
-            new Vector3(0.0f, 0.0f, 1.0f),
-            new Vector3(1.0f, 0.0f, 1.0f),
-            new Vector3(2.0f, 0.0f, 1.0f),
-            new Vector3(3.0f, 0.0f, 1.0f),
-            new Vector3(4.0f, 0.0f, 1.0f),
-            new Vector3(5.0f, 0.0f, 1.0f),
-
-            new Vector3(0.0f, 0.0f, 2.0f),
-            new Vector3(1.0f, 0.0f, 2.0f),
-            new Vector3(2.0f, 0.0f, 2.0f),
-            new Vector3(3.0f, 0.0f, 2.0f),
-            new Vector3(4.0f, 0.0f, 2.0f),
-            new Vector3(5.0f, 0.0f, 2.0f),
-
-            new Vector3(0.0f, 0.0f, 3.0f),
-            new Vector3(1.0f, 0.0f, 3.0f),
-            new Vector3(2.0f, 0.0f, 3.0f),
-            new Vector3(3.0f, 0.0f, 3.0f),
-            new Vector3(4.0f, 0.0f, 3.0f),
-            new Vector3(5.0f, 0.0f, 3.0f),
-        };
+        private Block _block2 = new Dirt();
 
         private readonly Vector3 _lightPos = new Vector3(1.2f, 1.0f, 2.0f);
 
         private int _vertexBufferObject;
-
-        private int _vaoModel;
-
+        private int _vaoGrass;
+        private int _vaoDirt;
         private int _vaoLamp;
 
         private Shader _lampShader;
-
         private Shader _lightingShader;
 
-        // The texture containing information for the diffuse map, this would more commonly
-        // just be called the color/texture of the object.
         private Texture _diffuseMap;
 
         private Camera _camera;
+        private NoiseGenerator _noiseGenerator;
 
         private bool _firstMove = true;
 
         private Vector2 _lastPos;
+        private int _vertexBufferObject2;
 
         public Game(GameWindowSettings gameWindowSettings, NativeWindowSettings nativeWindowSettings)
             : base(gameWindowSettings, nativeWindowSettings)
@@ -80,6 +50,8 @@ namespace PoorCraft
 
             GL.ClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 
+            _noiseGenerator = new NoiseGenerator(new Random().Next());
+
             GL.Enable(EnableCap.DepthTest);
 
             _vertexBufferObject = GL.GenBuffer();
@@ -90,8 +62,30 @@ namespace PoorCraft
             _lampShader = new Shader("Shaders/shader.vert", "Shaders/shader.frag");
 
             {
-                _vaoModel = GL.GenVertexArray();
-                GL.BindVertexArray(_vaoModel);
+                _vaoGrass = GL.GenVertexArray();
+                GL.BindVertexArray(_vaoGrass);
+
+                // All of the vertex attributes have been updated to now have a stride of 8 float sizes.
+                var positionLocation = _lightingShader.GetAttribLocation("aPos");
+                GL.EnableVertexAttribArray(positionLocation);
+                GL.VertexAttribPointer(positionLocation, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 0);
+
+                var normalLocation = _lightingShader.GetAttribLocation("aNormal");
+                GL.EnableVertexAttribArray(normalLocation);
+                GL.VertexAttribPointer(normalLocation, 3, VertexAttribPointerType.Float, false, 8 * sizeof(float), 3 * sizeof(float));
+
+                var texCoordLocation = _lightingShader.GetAttribLocation("aTexCoords");
+                GL.EnableVertexAttribArray(texCoordLocation);
+                GL.VertexAttribPointer(texCoordLocation, 2, VertexAttribPointerType.Float, false, 8 * sizeof(float), 6 * sizeof(float));
+            }
+
+            {
+                _vertexBufferObject2 = GL.GenBuffer();
+                GL.BindBuffer(BufferTarget.ArrayBuffer, _vertexBufferObject2);
+                GL.BufferData(BufferTarget.ArrayBuffer, _block2.Length * sizeof(float), _block2.Data, BufferUsageHint.StaticDraw);
+
+                _vaoDirt = GL.GenVertexArray();
+                GL.BindVertexArray(_vaoDirt);
 
                 // All of the vertex attributes have been updated to now have a stride of 8 float sizes.
                 var positionLocation = _lightingShader.GetAttribLocation("aPos");
@@ -131,7 +125,7 @@ namespace PoorCraft
 
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            GL.BindVertexArray(_vaoModel);
+            GL.BindVertexArray(_vaoGrass);
 
             _diffuseMap.Use(TextureUnit.Texture0);
             _lightingShader.Use();
@@ -152,16 +146,35 @@ namespace PoorCraft
             _lightingShader.SetVector3("light.ambient", new Vector3(0.2f));
             _lightingShader.SetVector3("light.diffuse", new Vector3(0.5f));
 
-            for (int i = 0; i < _cubePositions.Length; i++)
-            {
-                Matrix4 model = Matrix4.CreateTranslation(_cubePositions[i]);
-                model *= Matrix4.CreateScale(0.2f);
-                _lightingShader.SetMatrix4("model", model);
+            var cubeSize = 50;
 
-                GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
-            }
+            for (int i = 0; i < cubeSize; i++)
+                for (int j = 0; j < cubeSize; j++)
+                {
+                    GL.BindVertexArray(_vaoGrass);
 
-            GL.BindVertexArray(_vaoModel);
+                    var z = (float)System.Math.Ceiling(_noiseGenerator.Noise(i * 0.1f, j * 0.1f) * 10);
+
+                    Matrix4 model = Matrix4.CreateTranslation(new Vector3(j, z, i));
+                    model *= Matrix4.CreateScale(0.2f);
+                    _lightingShader.SetMatrix4("model", model);
+
+                    GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+
+                    for (int k = (int)z; -10 < k; k--)
+                    {
+                        GL.BindVertexArray(_vaoDirt);
+
+                        model = Matrix4.CreateTranslation(new Vector3(j, k, i));
+                        model *= Matrix4.CreateScale(0.2f);
+                        _lightingShader.SetMatrix4("model", model);
+
+                        GL.DrawArrays(PrimitiveType.Triangles, 0, 36);
+                    }
+                }
+
+
+            GL.BindVertexArray(_vaoGrass);
 
             _lampShader.Use();
 
@@ -244,7 +257,7 @@ namespace PoorCraft
         {
             base.OnMouseWheel(e);
 
-            _camera.Fov -= e.OffsetY;
+            //_camera.Fov -= e.OffsetY;
         }
 
         protected override void OnResize(ResizeEventArgs e)
